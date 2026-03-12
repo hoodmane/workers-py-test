@@ -63,4 +63,4 @@ tag_format = "dummy-workers-py-v{version}"
 build_command = "pip install build && python -m build"
 
 [tool.semantic_release.commit_parser_options]
-scope_prefix = "dummy-workers-py-"
+scope_prefix = "dummy-workers-py"
