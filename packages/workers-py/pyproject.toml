@@ -63,4 +63,5 @@ tag_format = "dummy-workers-py-v{version}"
 build_command = "pip install hatchling hatch-vcs && uv build"
 
 [tool.semantic_release.commit_parser_options]
+path_filters = ["."]
 scope_prefix = "dummy-workers-py-"
