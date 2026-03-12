@@ -47,5 +47,4 @@ tag_format = "dummy-workers-runtime-sdk-v{version}"
 build_command = "pip install build && python -m build"
 
 [tool.semantic_release.commit_parser_options]
-path_filters = ["."]
 scope_prefix = "dummy-workers-runtime-sdk-"

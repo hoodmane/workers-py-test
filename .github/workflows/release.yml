@@ -11,37 +11,27 @@ permissions:
   contents: read
 
 jobs:
-  release:
+  release-sdk:
     runs-on: ubuntu-latest
     concurrency:
-      group: ${{ github.workflow }}-release-${{ github.ref_name }}-${{ matrix.package }}
+      group: ${{ github.workflow }}-release-sdk-${{ github.ref_name }}
       cancel-in-progress: false
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - package: dummy-workers-runtime-sdk
-            directory: packages/workers-runtime-sdk
-          - package: dummy-workers-py
-            directory: packages/workers-py
-
     outputs:
-      # Use a combined output: true if ANY package was released
-      sdk-released: ${{ steps.release.outputs.released }}
-      py-released: ${{ steps.release.outputs.released }}
+      released: ${{ steps.release.outputs.released }}
+      tag: ${{ steps.release.outputs.tag }}
 
     permissions:
       contents: write
 
     steps:
-      - name: Setup | Checkout Repository on Release Branch
+      - name: Setup | Checkout Repository
         uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Setup | Force release branch to be at workflow sha
+      - name: Setup | Force branch to workflow sha
         run: |
           git reset --hard ${{ github.sha }}
 
@@ -52,7 +42,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           git_committer_name: "CI Bot"
           git_committer_email: "ci-bot@example.com"
-          directory: ${{ matrix.directory }}
+          directory: packages/workers-runtime-sdk
 
       - name: Publish | Upload to GitHub Release Assets
         uses: python-semantic-release/publish-action@v10.5.3
@@ -60,21 +50,67 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.release.outputs.tag }}
-          directory: ${{ matrix.directory }}
+          directory: packages/workers-runtime-sdk
 
       - name: Upload | Distribution Artifacts
         uses: actions/upload-artifact@v4
         if: steps.release.outputs.released == 'true'
         with:
-          name: distribution-artifacts-${{ matrix.package }}
-          path: ${{ matrix.directory }}/dist
+          name: distribution-artifacts-dummy-workers-runtime-sdk
+          path: packages/workers-runtime-sdk/dist
+          if-no-files-found: error
+
+  release-py:
+    runs-on: ubuntu-latest
+    needs: release-sdk
+    if: always() && (needs.release-sdk.result == 'success' || needs.release-sdk.result == 'skipped')
+    concurrency:
+      group: ${{ github.workflow }}-release-py-${{ github.ref_name }}
+      cancel-in-progress: false
+
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      tag: ${{ steps.release.outputs.tag }}
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Setup | Checkout Repository (latest, after SDK release)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Action | Semantic Version Release
+        id: release
+        uses: python-semantic-release/python-semantic-release@v10.5.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          git_committer_name: "CI Bot"
+          git_committer_email: "ci-bot@example.com"
+          directory: packages/workers-py
+
+      - name: Publish | Upload to GitHub Release Assets
+        uses: python-semantic-release/publish-action@v10.5.3
+        if: steps.release.outputs.released == 'true'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.release.outputs.tag }}
+          directory: packages/workers-py
+
+      - name: Upload | Distribution Artifacts
+        uses: actions/upload-artifact@v4
+        if: steps.release.outputs.released == 'true'
+        with:
+          name: distribution-artifacts-dummy-workers-py
+          path: packages/workers-py/dist
           if-no-files-found: error
 
   deploy:
     runs-on: ubuntu-latest
-    needs: release
-    # Run if any matrix job released something
-    if: always() && (needs.release.result == 'success')
+    needs: [release-sdk, release-py]
+    if: always() && (needs.release-sdk.outputs.released == 'true' || needs.release-py.outputs.released == 'true')
 
     permissions:
       contents: read
@@ -89,20 +125,7 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - name: Check for artifacts
-        id: check
-        run: |
-          if [ -z "$(ls -A dist/ 2>/dev/null)" ]; then
-            echo "has_artifacts=false" >> "$GITHUB_OUTPUT"
-            echo "No artifacts to deploy"
-          else
-            echo "has_artifacts=true" >> "$GITHUB_OUTPUT"
-            echo "Found artifacts:"
-            ls -la dist/
-          fi
-
       - name: Publish package distributions to PyPI
-        if: steps.check.outputs.has_artifacts == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
