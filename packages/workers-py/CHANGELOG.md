@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.3.0 (2026-03-12)
+
+### Features
+
+- Add commit_message and path_filters to release config
+  ([`b62c60a`](https://github.com/hoodmane/workers-py-test/commit/b62c60a175c8d958754ecd698f394a23d4ea3e62))
+
+
 ## v1.2.0 (2026-03-12)
 
 ### Features
