@@ -27,7 +27,7 @@ jobs:
       - name: Setup | Checkout Repository on Release Branch
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.DEVPROD_PAT }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           ref: main
           fetch-depth: 0
 
@@ -63,7 +63,7 @@ jobs:
         id: release
         uses: python-semantic-release/python-semantic-release@v10.2.0
         with:
-          github_token: ${{ secrets.DEVPROD_PAT }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           git_committer_name: "CI Bot"
           git_committer_email: "ci-bot@example.com"
 
@@ -71,7 +71,7 @@ jobs:
         uses: python-semantic-release/publish-action@v10.2.0
         if: steps.release.outputs.released == 'true'
         with:
-          github_token: ${{ secrets.DEVPROD_PAT }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.release.outputs.tag }}
 
       - name: Upload | Distribution Artifacts
