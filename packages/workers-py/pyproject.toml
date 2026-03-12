@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "dummy-workers-py"
+version = "1.0.0"
+description = "Dummy workers-py CLI for CI/CD testing"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+    "click",
+    "rich",
+    "dummy-workers-runtime-sdk>=0.1.0",
+]
+
+[project.scripts]
+pywrangler = "pywrangler.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pywrangler"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "B",
+    "C4",
+    "C90",
+    "E",
+    "F",
+    "I",
+    "PERF",
+    "PGH",
+    "PL",
+    "UP",
+    "W",
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[[tool.mypy.overrides]]
+module = "pywrangler.*"
+strict = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+strict = false
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.semantic_release]
+commit_parser = "conventional-monorepo"
+version_variables = ["src/pywrangler/__init__.py:__version__"]
+version_toml = ["pyproject.toml:project.version"]
+tag_format = "dummy-workers-py-v{version}"
+build_command = "pip install hatchling hatch-vcs && uv build"
+
+[tool.semantic_release.commit_parser_options]
+scope_prefix = "dummy-workers-py-"
