@@ -1,6 +1,6 @@
 """Workers Runtime SDK - Dummy package for CI/CD testing."""
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 
 class Request:
